@@ -13,7 +13,7 @@
 
 <title>Chapter 5: FoSR</title>
 
-<script src="site_libs/header-attrs-2.24/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.28/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
@@ -500,12 +500,7 @@ functions at the midpoint of each hour.</p>
     MIMS_hour = 
       tf_smooth(MIMS_tf, method = &quot;rollmean&quot;, k = 60, align = &quot;center&quot;),
     MIMS_hour = tfd(MIMS_hour, arg = seq(.5, 23.5, by = 1))) 
-## setting fill = &#39;extend&#39; for start/end values.
-## Warning: There was 1 warning in `mutate()`.
-## ℹ In argument: `MIMS_hour = tf_smooth(MIMS_tf, method = &quot;rollmean&quot;, k = 60,
-##   align = &quot;center&quot;)`.
-## Caused by warning in `tf_smooth.tfd()`:
-## ! non-equidistant arg-values in &#39;MIMS_tf&#39; ignored by rollmean.</code></pre>
+## setting fill = &#39;extend&#39; for start/end values.</code></pre>
 <p>The resulting <code>MIMS_hour</code> data are shown for a subset of
 participants in the Figure below. As before, we are interested in the
 effects of <code>age</code>, now treated as a continuous variable, and
@@ -1165,7 +1160,7 @@ errors to obtain estimates of fixed effects <span
 class="math inline">\(\beta_{q}(s)\)</span> and fitted values <span
 class="math inline">\(\hat{Y_i}(s)\)</span> for each subject. From
 these, we compute residuals <span class="math inline">\(\hat{w}_i(s) =
-Y_{i}(s) = \hat{Y_i}(s)\)</span> which can be decomposed using standard
+Y_{i}(s) - \hat{Y_i}(s)\)</span> which can be decomposed using standard
 FPCA methods to produce estimates of FPCs <span
 class="math inline">\(\hat{\phi}_{k}(s)\)</span>. In the second step,
 the <span class="math inline">\(\hat{\phi}_{k}(s)\)</span> are treated
@@ -1204,9 +1199,7 @@ FPCs than the default implementation.</p>
   tf_nest(resid, .id = SEQN, .arg = epoch)
 
 nhanes_resid_fpca = 
-  rfr_fpca(&quot;resid&quot;, nhanes_fpca_df, center = FALSE, lambda = 50)
-## Warning in new_tfb_fpc(data, domain = domain, method = method, resolution = resolution, : domain for tfb_fpc can&#39;t be larger than observed arg-range -- extrapolating FPCs is a bad idea.
-##  domain reset to [0.017,24]</code></pre>
+  rfr_fpca(&quot;resid&quot;, nhanes_fpca_df, center = FALSE, lambda = 50)</code></pre>
 <p>The second step in our two-stage approach is to treat the resulting
 FPCs as “known” so that scores can be estimated as random effects. We
 will use a variation on the random intercept implementation to do this.
@@ -1428,11 +1421,6 @@ functional responses were organized in long format. \</p>
   rename(epoch = MIMS_hour_tf_arg, MIMS_hour = MIMS_hour_tf_value) %&gt;%
   pivot_wider(names_from = epoch, values_from = MIMS_hour)
 ## setting fill = &#39;extend&#39; for start/end values.
-## Warning: There was 1 warning in `mutate()`.
-## ℹ In argument: `MIMS_hour_tf = tf_smooth(MIMS_tf, method = &quot;rollmean&quot;, k = 60,
-##   align = &quot;center&quot;)`.
-## Caused by warning in `tf_smooth.tfd()`:
-## ! non-equidistant arg-values in &#39;MIMS_tf&#39; ignored by rollmean.
 
 MIMS_hour_mat &lt;-
   nhanes_famm_df %&gt;%
