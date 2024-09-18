@@ -13,7 +13,7 @@
 
 <title>Chapter 5: FoSR</title>
 
-<script src="site_libs/header-attrs-2.28/header-attrs.js"></script>
+<script src="site_libs/header-attrs-2.24/header-attrs.js"></script>
 <script src="site_libs/jquery-3.6.0/jquery-3.6.0.min.js"></script>
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <link href="site_libs/bootstrap-3.3.5/css/cosmo.min.css" rel="stylesheet" />
@@ -500,7 +500,12 @@ functions at the midpoint of each hour.</p>
     MIMS_hour = 
       tf_smooth(MIMS_tf, method = &quot;rollmean&quot;, k = 60, align = &quot;center&quot;),
     MIMS_hour = tfd(MIMS_hour, arg = seq(.5, 23.5, by = 1))) 
-## setting fill = &#39;extend&#39; for start/end values.</code></pre>
+## setting fill = &#39;extend&#39; for start/end values.
+## Warning: There was 1 warning in `mutate()`.
+## ℹ In argument: `MIMS_hour = tf_smooth(MIMS_tf, method = &quot;rollmean&quot;, k = 60,
+##   align = &quot;center&quot;)`.
+## Caused by warning:
+## ! non-equidistant arg-values in &#39;MIMS_tf&#39; ignored by rollmean.</code></pre>
 <p>The resulting <code>MIMS_hour</code> data are shown for a subset of
 participants in the Figure below. As before, we are interested in the
 effects of <code>age</code>, now treated as a continuous variable, and
@@ -571,9 +576,11 @@ point.</p>
   filter(MIMS_hour_arg == 13.5) %&gt;% 
   modelr::add_predictions(linear_fit) %&gt;% 
   ggplot(aes(x = age, y = MIMS_hour_value, color = gender)) + 
-  geom_point(alpha = .5, size = .9) + 
+  geom_point(alpha = .5, lwd = .9) + 
   geom_line(aes(y = pred), linewidth = 1.1) + 
-      labs(x = &quot;Age&quot;, y = &quot;Hour Average MIMS&quot;)</code></pre>
+      labs(x = &quot;Age&quot;, y = &quot;Hour Average MIMS&quot;)
+## Warning in geom_point(alpha = 0.5, lwd = 0.9): Ignoring unknown parameters:
+## `linewidth`</code></pre>
 <p><img src="chapter_05_files/figure-html/unnamed-chunk-7-1.png" width="90%" /></p>
 <p>In this plot, the binned-average MIMS values decrease with age, and
 female participants may have somewhat higher values than male
@@ -895,14 +902,12 @@ below estimates spline coefficients.</p>
 
 OLS_coef_df %&gt;% 
   ggplot(aes(y = coef, color = term)) + 
-  geom_spaghetti(size = 1.1, alpha = .75) +  
+  geom_spaghetti(lwd = 1.1, alpha = .75) +  
   facet_wrap(&quot;term&quot;, scales = &quot;free&quot;) + 
   scale_x_continuous(
     breaks = seq(0, 24, length = 5),
     labels = str_c(seq(0, 24, length = 5), &quot;:00&quot;)) + 
-  labs(x = &quot;Time of day (hours)&quot;, y = &quot;Coefficient&quot;)
-## Warning in geom_spaghetti(size = 1.1, alpha = 0.75): Ignoring unknown
-## parameters: `size`</code></pre>
+  labs(x = &quot;Time of day (hours)&quot;, y = &quot;Coefficient&quot;)</code></pre>
 <p><img src="chapter_05_files/figure-html/unnamed-chunk-17-1.png" width="90%" /></p>
 <p>Comparing these results to those obtained from epoch-specific
 regressions begins to indicate the benefits of a functional perspective.
@@ -1033,14 +1038,12 @@ effect, which must be added to the intercept function.</p>
 functions using tools seen previously.</p>
 <pre class="r"><code>gam_coef_df %&gt;% 
   ggplot(aes(y = coef, color = term)) + 
-  geom_spaghetti(size = 1.1, alpha = .75) +  
+  geom_spaghetti(lwd = 1.1, alpha = .75) +  
   facet_wrap(vars(term), scales = &quot;free&quot;) + 
   scale_x_continuous(
     breaks = seq(0, 24, length = 5),
     labels = str_c(seq(0, 24, length = 5), &quot;:00&quot;)) + 
-  labs(x = &quot;Time of day (hours)&quot;, y = &quot;Coefficient&quot;)
-## Warning in geom_spaghetti(size = 1.1, alpha = 0.75): Ignoring unknown
-## parameters: `size`</code></pre>
+  labs(x = &quot;Time of day (hours)&quot;, y = &quot;Coefficient&quot;)</code></pre>
 <p><img src="chapter_05_files/figure-html/unnamed-chunk-22-1.png" width="90%" /></p>
 <p>The plot below includes estimates obtained from the three approaches
 seen so far, and facilitates a comparison of methods. Each approach –
@@ -1199,7 +1202,9 @@ FPCs than the default implementation.</p>
   tf_nest(resid, .id = SEQN, .arg = epoch)
 
 nhanes_resid_fpca = 
-  rfr_fpca(&quot;resid&quot;, nhanes_fpca_df, center = FALSE, lambda = 50)</code></pre>
+  rfr_fpca(&quot;resid&quot;, nhanes_fpca_df, center = FALSE, lambda = 50)
+## Warning: domain for tfb_fpc can&#39;t be larger than observed arg-range -- extrapolating FPCs is a bad idea.
+##  domain reset to [0.017,24]</code></pre>
 <p>The second step in our two-stage approach is to treat the resulting
 FPCs as “known” so that scores can be estimated as random effects. We
 will use a variation on the random intercept implementation to do this.
@@ -1410,10 +1415,13 @@ implement binned regression. The hour-level MIMS is named
 <code>MIMS_hour_mat</code> and stored as a matrix in a column, and we
 emphasize that this data structure used is different from the data
 structure used in the <code>mgcv::bam()</code> function, where
-functional responses were organized in long format. \</p>
+functional responses were organized in long format. Note that, as in the
+<code>gam</code> fits, we explicitly create a binary indicator for the
+<code>gender</code> variable.</p>
 <pre class="r"><code>nhanes_famm_df &lt;-
   nhanes_df %&gt;%
   mutate(
+    gender = as.numeric(gender == &quot;Female&quot;),
     MIMS_hour_tf = 
       tf_smooth(MIMS_tf, method = &quot;rollmean&quot;, k = 60, align = &quot;center&quot;),
     MIMS_hour_tf = tfd(MIMS_hour_tf, arg = seq(.5, 23.5, by = 1))) %&gt;%
@@ -1421,6 +1429,11 @@ functional responses were organized in long format. \</p>
   rename(epoch = MIMS_hour_tf_arg, MIMS_hour = MIMS_hour_tf_value) %&gt;%
   pivot_wider(names_from = epoch, values_from = MIMS_hour)
 ## setting fill = &#39;extend&#39; for start/end values.
+## Warning: There was 1 warning in `mutate()`.
+## ℹ In argument: `MIMS_hour_tf = tf_smooth(MIMS_tf, method = &quot;rollmean&quot;, k = 60,
+##   align = &quot;center&quot;)`.
+## Caused by warning:
+## ! non-equidistant arg-values in &#39;MIMS_tf&#39; ignored by rollmean.
 
 MIMS_hour_mat &lt;-
   nhanes_famm_df %&gt;%
@@ -1460,9 +1473,7 @@ we again add the population intercept to the intercept function.</p>
     coef = coef + c(nhanes_famm$coef[1], 0, 0),
     ub = coef + 1.96 * se, 
     lb = coef - 1.96 * se) 
-## using seWithMean for  s(yindex.vec) .
-## using seWithMean for  s(yindex.vec):genderMale .
-## using seWithMean for  s(yindex.vec):genderFemale .</code></pre>
+## using seWithMean for  s(yindex.vec) .</code></pre>
 <p>The next Figure shows the fixed effects estimates obtained using
 <code>pffr()</code>. Notice that these estimates are similar to those
 using separate epoch-level regressions, and in particular those using
@@ -1561,14 +1572,13 @@ including penalized splines; this suggests that this technique is a
 plausible and scalable approach to FoSR modeling.</p>
 <pre class="r"><code>fui_coef_df %&gt;% 
   ggplot(aes(y = smooth_coef, color = term)) + 
-  geom_spaghetti(size = 1.2) + 
+  geom_spaghetti(lwd = 1.2) + 
   geom_spaghetti(aes(y = coef), alpha = .2)  + 
   facet_wrap(~term, scales = &quot;free&quot;) + 
   scale_x_continuous(
     breaks = seq(0, 24, length = 5),
     labels = str_c(seq(0, 24, length = 5), &quot;:00&quot;)) + 
-  labs(x = &quot;Time of day (hours)&quot;, y = &quot;Coefficient&quot;)
-## Warning in geom_spaghetti(size = 1.2): Ignoring unknown parameters: `size`</code></pre>
+  labs(x = &quot;Time of day (hours)&quot;, y = &quot;Coefficient&quot;)</code></pre>
 <p><img src="chapter_05_files/figure-html/unnamed-chunk-38-1.png" width="90%" /></p>
 <p>An important focus is to model error structures and thereby obtain
 accurate inference. The scalable approach we suggest in this section
@@ -1623,20 +1633,16 @@ account for the complete joint distribution of the functions.</p>
     ub = est + 1.96 * se, 
     lb = est - 1.96 * se) %&gt;% 
   ggplot(aes(y = est, color = term)) + 
-  geom_spaghetti(size = 1.2, alpha = .9) + 
+  geom_spaghetti(lwd = 1.2, alpha = .9) + 
   geom_spaghetti(
     data = filter(fui_bootstrap_results, iteration &lt;= 25), 
-    aes(y = smooth_coef), alpha = .25, size = .5) +
+    aes(y = smooth_coef), alpha = .25, lwd = .5) +
   geom_errorband(aes(ymax = ub, ymin = lb, fill = term), alpha = .15)  + 
   facet_wrap(~term, scales = &quot;free&quot;)  + 
   scale_x_continuous(
     breaks = seq(0, 24, length = 5),
     labels = str_c(seq(0, 24, length = 5), &quot;:00&quot;)) + 
-  labs(x = &quot;Time of day (hours)&quot;, y = &quot;Coefficient&quot;)
-## Warning in geom_spaghetti(size = 1.2, alpha = 0.9): Ignoring unknown
-## parameters: `size`
-## Warning in geom_spaghetti(data = filter(fui_bootstrap_results, iteration &lt;= :
-## Ignoring unknown parameters: `size`</code></pre>
+  labs(x = &quot;Time of day (hours)&quot;, y = &quot;Coefficient&quot;)</code></pre>
 <p><img src="chapter_05_files/figure-html/unnamed-chunk-40-1.png" width="90%" /></p>
 </div>
 

@@ -145,7 +145,7 @@ nhanes_df %>%
   filter(MIMS_hour_arg == 13.5) %>% 
   modelr::add_predictions(linear_fit) %>% 
   ggplot(aes(x = age, y = MIMS_hour_value, color = gender)) + 
-  geom_point(alpha = .5, size = .9) + 
+  geom_point(alpha = .5, lwd = .9) + 
   geom_line(aes(y = pred), linewidth = 1.1) + 
       labs(x = "Age", y = "Hour Average MIMS")
 ```
@@ -357,7 +357,7 @@ OLS_coef_df =
 
 OLS_coef_df %>% 
   ggplot(aes(y = coef, color = term)) + 
-  geom_spaghetti(size = 1.1, alpha = .75) +  
+  geom_spaghetti(lwd = 1.1, alpha = .75) +  
   facet_wrap("term", scales = "free") + 
   scale_x_continuous(
     breaks = seq(0, 24, length = 5),
@@ -429,7 +429,7 @@ With data structured in this way, we can then plot coefficient functions using t
 ```{r}
 gam_coef_df %>% 
   ggplot(aes(y = coef, color = term)) + 
-  geom_spaghetti(size = 1.1, alpha = .75) +  
+  geom_spaghetti(lwd = 1.1, alpha = .75) +  
   facet_wrap(vars(term), scales = "free") + 
   scale_x_continuous(
     breaks = seq(0, 24, length = 5),
@@ -600,12 +600,13 @@ In some ways, it is unsurprising that the coefficient function estimates produce
 
 A powerful approach to implementing FoSR is to model both the fixed effects parameters $\beta_q(s)$ and the structured random residuals using penalized splines. This approach has several advantages as it: (1) uses a pre-specified basis, which avoids the potential problems associated with the uncertainty of FPCA bases that are estimated from the data; (2) avoids the problem of estimating an FPCA basis, which is especially useful when dealing with non-Gaussian functions; (3) can be implemented in existing software; see the `refund::pffr()`; (4) allows joint analysis of the model using a fully specified, explicit likelihood; and (5) is consistent with inferential tools for estimation, testing, and uncertainty quantification. 
 
-We now show how to use `refund::pffr()` to fit the FoSR model. For computational efficiency, we aggregate minute-level data into hour-length bins and reduce each MIMS profile from 1440 to 24 observations. This step is achieved using the same code introduced to implement binned regression. The hour-level MIMS is named `MIMS_hour_mat` and stored as a matrix in a column, and we emphasize that this data structure used is different from the data structure used in the `mgcv::bam()` function, where functional responses were organized in long format. \\
+We now show how to use `refund::pffr()` to fit the FoSR model. For computational efficiency, we aggregate minute-level data into hour-length bins and reduce each MIMS profile from 1440 to 24 observations. This step is achieved using the same code introduced to implement binned regression. The hour-level MIMS is named `MIMS_hour_mat` and stored as a matrix in a column, and we emphasize that this data structure used is different from the data structure used in the `mgcv::bam()` function, where functional responses were organized in long format. Note that, as in the `gam` fits, we explicitly create a binary indicator for the `gender` variable. 
 
 ```{r}
 nhanes_famm_df <-
   nhanes_df %>%
   mutate(
+    gender = as.numeric(gender == "Female"),
     MIMS_hour_tf = 
       tf_smooth(MIMS_tf, method = "rollmean", k = 60, align = "center"),
     MIMS_hour_tf = tfd(MIMS_hour_tf, arg = seq(.5, 23.5, by = 1))) %>%
@@ -712,7 +713,7 @@ The figure below contains a panel for each term, and shows epoch-level and smoot
 ```{r}
 fui_coef_df %>% 
   ggplot(aes(y = smooth_coef, color = term)) + 
-  geom_spaghetti(size = 1.2) + 
+  geom_spaghetti(lwd = 1.2) + 
   geom_spaghetti(aes(y = coef), alpha = .2)  + 
   facet_wrap(~term, scales = "free") + 
   scale_x_continuous(
@@ -748,10 +749,10 @@ fui_bootstrap_results %>%
     ub = est + 1.96 * se, 
     lb = est - 1.96 * se) %>% 
   ggplot(aes(y = est, color = term)) + 
-  geom_spaghetti(size = 1.2, alpha = .9) + 
+  geom_spaghetti(lwd = 1.2, alpha = .9) + 
   geom_spaghetti(
     data = filter(fui_bootstrap_results, iteration <= 25), 
-    aes(y = smooth_coef), alpha = .25, size = .5) +
+    aes(y = smooth_coef), alpha = .25, lwd = .5) +
   geom_errorband(aes(ymax = ub, ymin = lb, fill = term), alpha = .15)  + 
   facet_wrap(~term, scales = "free")  + 
   scale_x_continuous(
